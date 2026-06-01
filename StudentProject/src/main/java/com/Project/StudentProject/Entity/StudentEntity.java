@@ -17,22 +17,18 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class StudentEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     //    @NotNull(message = "Name cannot null")
-    @NotBlank(message = "Name Cannot be Empty")
     private String name;
 
-    @NotBlank(message = "Email Cannot be Blank")
-    @Email(message = "Email should be Valid")
     private String email;
 
-    @NotNull(message = "Age cannot be null")
-    @Min(value = 1, message = "Age must be Greater Then 0")
-    @Max(value = 100, message = "Age must be under 100")
+
     private Integer age;
 
 //    @NotBlank(message = "Status is required")

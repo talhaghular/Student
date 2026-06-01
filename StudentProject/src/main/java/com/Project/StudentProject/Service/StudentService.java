@@ -17,6 +17,8 @@ import com.Project.StudentProject.util.APIMessage;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -42,15 +44,19 @@ public class StudentService {
     private SubjectRepo subjectRepo;
 
     @Transactional(rollbackOn = Exception.class)
-    public ResponceModel postdata(StudentEntity studentEntity){
-        List<StudentEntity> exist=studentRepo.findByEmail(studentEntity.getEmail());
+    @CacheEvict(value = "students",allEntries = true)
+    public ResponceModel postdata(StudentDto studentDto){
+        StudentEntity entity=StudentDto.toEntity(studentDto);
+        List<StudentEntity> exist=studentRepo.findByEmail(studentDto.getEmail());
         if (exist.isEmpty()) {
-            StudentEntity saved = studentRepo.save(studentEntity);
+            entity.setStatus(Status.ACTIVE);
+            StudentEntity saved = studentRepo.save(entity);
+            StudentDto dto=StudentDto.toDto(saved);
             return new ResponceModel(
                     HttpStatus.CREATED,
                     HttpStatus.CREATED.value(),
                     APIMessage.CREATED,
-                    saved
+                    dto
             );
 
         }
@@ -81,22 +87,24 @@ public class StudentService {
         );
     }
 
-    public ResponceModel updatedata(int  id,StudentEntity studentEntity){
+    @CacheEvict(value = "students",allEntries = true)
+    public ResponceModel updatedata(int  id,StudentDto studentDto){
+//        StudentEntity st=StudentDto.toEntity(studentDto);
        StudentEntity stud= studentRepo.findById(id).orElse(null);
-       List<StudentEntity> exist=studentRepo.findByEmail(studentEntity.getEmail());
+       List<StudentEntity> exist=studentRepo.findByEmail(studentDto.getEmail());
 
        if (exist.isEmpty()) {
            if (stud != null) {
-               if (studentEntity.getName() != null) stud.setName(studentEntity.getName());
-               if (studentEntity.getEmail() != null) stud.setEmail(studentEntity.getEmail());
-               if (studentEntity.getAge() != null) stud.setAge(studentEntity.getAge());
-               if (studentEntity.getStatus() != null) stud.setStatus(studentEntity.getStatus());
+               if (studentDto.getName() != null && !studentDto.getName().trim().isEmpty()) stud.setName(studentDto.getName());
+               if (studentDto.getEmail() != null && !studentDto.getEmail().trim().isEmpty()) stud.setEmail(studentDto.getEmail());
+               if (studentDto.getAge() != null) stud.setAge(studentDto.getAge());
                StudentEntity updated=studentRepo.save(stud);
+               StudentDto dto=StudentDto.toDto(updated);
                return new ResponceModel(
-                       HttpStatus.CREATED,
-                       HttpStatus.CREATED.value(),
+                       HttpStatus.OK,
+                       HttpStatus.OK.value(),
                        APIMessage.UPDATED,
-                       updated
+                       dto
                );
            }
        }
@@ -108,6 +116,7 @@ public class StudentService {
         );
     }
 
+    @CacheEvict(value = "students",allEntries = true)
     public String delete(int id){
         StudentEntity st=studentRepo.findById(id).orElse(null);
 
@@ -124,23 +133,34 @@ public class StudentService {
     return "Your Data is Successfully Deleted..";
     }
 
+    @Cacheable(value = "getByEmail",key = "#email")
     public ResponceModel getByEmail(String email) {
         List<StudentEntity> st = studentRepo.findByEmail(email);
-
+        System.out.println("Data Fetched From DB.");
         if (st.isEmpty()) {
             throw new NotFoundExceptionResource(APIMessage.STUDENT_NOT_FOUND);
         } else {
+            List<StudentDto> dto=st.stream()
+                    .map(StudentDto::toDto)
+                    .toList();
             return new ResponceModel(HttpStatus.FOUND,
                     HttpStatus.FOUND.value(),
                     APIMessage.STUDENT_FOUND,
-                   st);
+                   dto);
         }
 
     }
 
-    public String getCount(){
+    @Cacheable(value = "getCount")
+    public ResponceModel getCount(){
+        System.out.println("Data Fetched From DB");
         long st= studentRepo.count();
-        return "Total Student is : "+st;
+        return new ResponceModel(
+                HttpStatus.OK,
+                HttpStatus.OK.value(),
+                "Total Student  is:",
+                st
+        );
     }
 
 
@@ -203,7 +223,9 @@ public class StudentService {
         return page.map(studentEntity ->  new StudentDto(
                 studentEntity.getId(),
                 studentEntity.getName(),
-                studentEntity.getAge()
+                studentEntity.getAge(),
+                studentEntity.getEmail(),
+                studentEntity.getStatus()
         ));
     }
 
@@ -213,7 +235,9 @@ public class StudentService {
         return studentEntityList.stream().map(studentEntity -> new StudentDto(
                 studentEntity.getId(),
                 studentEntity.getName(),
-                studentEntity.getAge()
+                studentEntity.getAge(),
+                studentEntity.getEmail(),
+                studentEntity.getStatus()
         )).toList();
     }
 
@@ -223,7 +247,9 @@ public class StudentService {
         return s.stream().map(studentEntity -> new StudentDto(
                 studentEntity.getId(),
                 studentEntity.getName(),
-                studentEntity.getAge()
+                studentEntity.getAge(),
+                studentEntity.getEmail(),
+                studentEntity.getStatus()
         )).toList();
     }
 }

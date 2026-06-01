@@ -14,6 +14,8 @@ import com.Project.StudentProject.exception.NotFoundExceptionResource;
 import com.Project.StudentProject.util.APIMessage;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,6 +40,7 @@ public class EnrollmentService {
 
     //store in memory -> if exception is not found then -> store in DB
     @Transactional(rollbackOn = Exception.class)
+    @CacheEvict(value = "enrollments",allEntries = true)
     public ResponceModel insertEnrollment(EnrollmentDto enrollmentDto){
         //1. is the courseId is valid
         //2. is the student Id is valid
@@ -82,6 +85,7 @@ public class EnrollmentService {
         );
     }
 
+    @Cacheable(value = "enrollments")
     public ResponceModel getAllEnrollment(int pageNo,int pageSize){
 
         System.out.println("Fetching from Database...");
@@ -100,8 +104,10 @@ public class EnrollmentService {
         );
     }
 
+    @CacheEvict(value = "enrollments",allEntries = true)
     public ResponceModel updateEnrollment(int enrollmentId,EnrollmentDto enrollmentDto){
 
+        System.out.println("Fetching from Database...");
         Enrollment exists=enrollmentRepo.findById(enrollmentId).orElse(null);
         if (exists == null){
             throw new NotFoundExceptionResource(APIMessage.ENROLLMENT_NOT_FOUND);
@@ -135,7 +141,9 @@ public class EnrollmentService {
         }
     }
 
+    @CacheEvict(value = "enrollments",allEntries = true)
     public ResponceModel deleteEnrollment(int enrollmentId){
+        System.out.println("Fetching From Database...");
         Enrollment exists=enrollmentRepo.findById(enrollmentId).orElse(null);
         if (exists == null){
             throw new NotFoundExceptionResource(APIMessage.ENROLLMENT_NOT_FOUND);

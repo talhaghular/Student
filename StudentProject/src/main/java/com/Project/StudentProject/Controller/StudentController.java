@@ -22,8 +22,8 @@ public class StudentController {
 
     //Post Data For Student
     @PostMapping
-    public ResponceModel post(@Valid @RequestBody StudentEntity studentEntity){
-        return studentService.postdata(studentEntity);
+    public ResponceModel post(@Valid @RequestBody StudentDto studentDto){
+        return studentService.postdata(studentDto);
     }
 
     //Get All Data for Student
@@ -34,8 +34,8 @@ public class StudentController {
 
     //for update student
     @PutMapping("/{id}")
-    public ResponceModel put(@PathVariable int id,@RequestBody StudentEntity studentEntity){
-        return  studentService.updatedata(id,studentEntity);
+    public ResponceModel put(@PathVariable int id,@RequestBody StudentDto studentDto){
+        return  studentService.updatedata(id,studentDto);
     }
 
     //for Delete Student
@@ -52,7 +52,7 @@ public class StudentController {
 
     //Count all  the students
     @GetMapping("/count")
-    public  String getCount(){
+    public  ResponceModel getCount(){
         return studentService.getCount();
     }
 
