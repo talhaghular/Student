@@ -27,7 +27,7 @@ public class StudentController {
     }
 
     //Get All Data for Student
-    @GetMapping
+    @GetMapping("/public")
     public ResponceModel getall(){
         return studentService.getdata();
     }
@@ -51,7 +51,7 @@ public class StudentController {
     }
 
     //Count all  the students
-    @GetMapping("/count")
+    @GetMapping("/count/private")
     public  ResponceModel getCount(){
         return studentService.getCount();
     }
